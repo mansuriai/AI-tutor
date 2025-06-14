@@ -1,0 +1,16 @@
+# Ignore everything
+
+# Except .py and .txt files
+!*.py
+!*.txtutils/apikey.py
+.env
+feedback_data.json
+response_logs.json
+app_logs.log
+__pycache__/
+models/
+*.log
+0.4.6
+3.8.0
+test_model.py
+test2.py

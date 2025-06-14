@@ -1,0 +1,76 @@
+# pinecone
+# streamlit>=1.24.0
+# chromadb>=0.4.0
+# langchain>=0.1.0
+# langchain-community>=0.0.10
+# openai>=1.0.0
+# python-dotenv>=1.0.0
+# tiktoken>=0.5.1
+# faiss-cpu>=1.7.4
+# sentence-transformers>=2.2.2
+# pypdf2>=3.0.0
+# redis>=4.5.0  
+# rank-bm25>=0.2.2 
+# asyncio>=3.4.3
+# boto3>=1.28.0
+# pysqlite3-binary>=0.5.2
+# streamlit-extras
+# langchain-huggingface>=0.0.3
+# torch>=2.0.0
+
+
+pinecone
+streamlit>=1.24.0
+chromadb>=0.4.0
+langchain>=0.1.0
+langchain-community>=0.0.10
+openai>=1.0.0
+python-dotenv>=1.0.0
+tiktoken>=0.5.1
+faiss-cpu>=1.7.4
+sentence-transformers>=2.2.2
+transformers>=4.30.0
+torch>=2.0.0
+pypdf2>=3.0.0
+redis>=4.5.0  
+rank-bm25>=0.2.2 
+asyncio>=3.4.3
+boto3>=1.28.0
+pysqlite3-binary>=0.5.2
+streamlit-extras
+pymysql==1.1.0
+sqlalchemy
+langchain-openai
+# # Vector DBs and retrieval
+# pinecone
+# chromadb>=0.4.0
+# faiss-cpu>=1.7.4
+# rank-bm25>=0.2.2
+
+# # LangChain ecosystem
+# langchain>=0.2.2
+# langchain-community>=0.0.10
+# langchain-huggingface>=0.0.1  # NEW: for HuggingFaceEmbeddings replacement
+
+# # Model APIs
+# openai>=1.13.3
+# tiktoken>=0.5.1
+# transformers>=4.38.2           # IMPORTANT: for init_empty_weights
+# sentence-transformers>=2.2.2
+
+# # Misc dependencies
+# python-dotenv>=1.0.0
+# pypdf2>=3.0.0
+# boto3>=1.28.0
+# pysqlite3-binary>=0.5.2
+# redis>=4.5.0
+# asyncio>=3.4.3  # Usually comes built-in with Python 3.7+
+
+# # Frontend
+# streamlit>=1.24.0
+# streamlit-extras
+
+# # Optional: torch (for inference and transformers)
+# torch>=2.1.0  # Ensure it's compatible with your CUDA or CPU setup
+
+#sqlalchemy=2.0.27
