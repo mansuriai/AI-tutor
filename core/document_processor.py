@@ -22,20 +22,6 @@ class DocumentContent:
         self.page_num = page_num
         self.metadata = metadata or {}
 
-# class SmartChunker:
-#     """Handles intelligent chunking of different content types."""
-#     def __init__(self, embeddings_model: str = config.EMBEDDING_MODEL):
-#         self.embedder = HuggingFaceEmbeddings(
-#             model_name=embeddings_model,
-#             model_kwargs={'device': 'cpu'},
-#             encode_kwargs={'normalize_embeddings': True}
-#         )
-#         self.text_splitter = RecursiveCharacterTextSplitter(
-#             chunk_size=config.CHUNK_SIZE,
-#             chunk_overlap=config.CHUNK_OVERLAP,
-#             length_function=len,
-#         )
-
 class SmartChunker:
     """Handles intelligent chunking of different content types."""
     def __init__(self, embeddings_model: str = config.EMBEDDING_MODEL):

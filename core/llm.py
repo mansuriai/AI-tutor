@@ -1,4 +1,4 @@
-# core/llm.py
+# # core/llm.py
 
 from typing import List, Dict, Optional, Tuple, Any
 from langchain_openai import ChatOpenAI
@@ -30,7 +30,7 @@ class LLMManager:
             streaming=True
         )
 
-        self.system_prompt = """" You are an AI assistant designed to provide clear, detailed, and accurate answers to user queries based on the provided context.
+        self.system_prompt = """You are an AI assistant designed to provide clear, detailed, and accurate answers to user queries based on the provided context.
  
             IMPORTANT GUIDELINES:
             1. Provide comprehensive, detailed responses that fully answer the user's question.
@@ -42,11 +42,20 @@ class LLMManager:
             7. Do not mention or reference that you're using "context" or "sources" in your response.
             8. If you don't have enough information to answer accurately, clearly state this rather than guessing.
             
+            MATHEMATICAL FORMULA FORMATTING:
+            9. When presenting mathematical formulas, use clear, readable notation:
+               - Use standard mathematical symbols (×, ÷, ≤, ≥, ≠, etc.)
+               - Write subscripts and superscripts clearly (use underscore _ for subscripts)
+               - For fractions, use the format (numerator)/(denominator)
+               - Avoid LaTeX formatting like \\text{{}}, \\frac{{}}, etc.
+               - Example: Instead of "\\text{{WACC}} = (w_d \\times r_d \\times (1 - T)) + (w_p \\times r_p) + (w_s \\times r_s)"
+                 Write: "WACC = (w_d × r_d × (1 - T)) + (w_p × r_p) + (w_s × r_s)"
+            
             Current context information:
-            {context}
+            {{context}}
             
             Previous conversation history:
-            {chat_history}
+            {{chat_history}}
             
             Please provide a helpful and accurate response based on the above information.
             
@@ -54,7 +63,7 @@ class LLMManager:
             Step 1 : Instructions of Step 1
             Step 2: Instructions of Step 2
         """
-        
+
         self.human_prompt = "{question}"
         
         self.prompt = ChatPromptTemplate.from_messages([
@@ -176,6 +185,57 @@ class LLMManager:
             return "\n\n**References:**\n" + "\n".join(source_lines)
         return ""
     
+    def post_process_mathematical_content(self, text: str) -> str:
+        """Post-process the LLM response to ensure mathematical content is readable."""
+        
+        # Dictionary of LaTeX expressions to replace
+        latex_replacements = {
+            r'\\text\{([^}]+)\}': r'\1',  # Remove \text{} wrapper
+            r'\\times': '×',
+            r'\\div': '÷',
+            r'\\cdot': '·',
+            r'\\frac\{([^}]+)\}\{([^}]+)\}': r'(\1)/(\2)',  # Convert fractions
+            r'\\leq': '≤',
+            r'\\geq': '≥',
+            r'\\neq': '≠',
+            r'\\approx': '≈',
+            r'\\sum': '∑',
+            r'\\pi': 'π',
+            r'\\alpha': 'α',
+            r'\\beta': 'β',
+            r'\\gamma': 'γ',
+            r'\\delta': 'δ',
+            r'\\sigma': 'σ',
+            r'\\mu': 'μ',
+            r'\\lambda': 'λ',
+            r'\\theta': 'θ',
+            r'\\phi': 'φ',
+            r'\\omega': 'ω',
+            r'\\sqrt': '√',
+            r'\\_': '_',  # Handle escaped underscores
+        }
+        
+        # Apply replacements
+        result = text
+        for pattern, replacement in latex_replacements.items():
+            if pattern == r'\\text\{([^}]+)\}':
+                result = re.sub(pattern, replacement, result)
+            elif pattern == r'\\frac\{([^}]+)\}\{([^}]+)\}':
+                result = re.sub(pattern, replacement, result)
+            else:
+                result = result.replace(pattern.replace('\\', ''), replacement)
+        
+        # Clean up subscripts and superscripts formatting
+        result = re.sub(r'_\{([^}]+)\}', r'_\1', result)
+        result = re.sub(r'\^\{([^}]+)\}', r'^\1', result)
+        
+        # Remove remaining LaTeX delimiters
+        result = re.sub(r'\$\$?([^$]+)\$\$?', r'\1', result)
+        result = re.sub(r'\\\[([^\]]+)\\\]', r'\1', result)
+        result = re.sub(r'\\\(([^)]+)\\\)', r'\1', result)
+        
+        return result
+    
     def generate_response(
         self,
         question: str,
@@ -183,14 +243,11 @@ class LLMManager:
         chat_history: Optional[List[Dict]] = None,
         streaming_container = None
     ) -> str:
-        """Generate a comprehensive response with proper source attribution."""
+        """Generate a comprehensive response with proper source attribution and mathematical formatting."""
         # Check for clarification needs
         needs_clarification, clarifying_questions = self.needs_clarification(
             question, context, chat_history
         )
-        
-        # if needs_clarification and clarifying_questions:
-        #     return self._format_clarification_question(clarifying_questions)
         
         # Generate the main response
         formatted_context = "\n\n".join([
@@ -241,6 +298,9 @@ class LLMManager:
                 "chat_history": formatted_history,
                 "question": question
             })
+        
+        # Post-process mathematical content
+        response = self.post_process_mathematical_content(response)
         
         # Add formatted source references
         if not response.strip().endswith(("?", "...")):
