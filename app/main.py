@@ -1,4 +1,4 @@
-# # app/main.py
+# app/main.py
 import streamlit as st
 from pathlib import Path
 import time
@@ -6,7 +6,6 @@ from typing import List, Dict
 import os, sys
 from urllib.parse import urlencode
 from pinecone import Pinecone, ServerlessSpec
-import re
 
 #################
 # Please comment this line while working on local machine
@@ -26,115 +25,6 @@ st.set_page_config(
 from core.embeddings import EmbeddingManager
 from core.vector_store import VectorStore
 from core.llm import LLMManager
-
-def convert_latex_to_unicode(text: str) -> str:
-    """Convert common LaTeX mathematical expressions to Unicode symbols."""
-    # Dictionary of LaTeX to Unicode conversions
-    latex_to_unicode = {
-        r'\\times': '×',
-        r'\\div': '÷',
-        r'\\pm': '±',
-        r'\\mp': '∓',
-        r'\\cdot': '·',
-        r'\\leq': '≤',
-        r'\\geq': '≥',
-        r'\\neq': '≠',
-        r'\\approx': '≈',
-        r'\\equiv': '≡',
-        r'\\propto': '∝',
-        r'\\infty': '∞',
-        r'\\sum': '∑',
-        r'\\prod': '∏',
-        r'\\int': '∫',
-        r'\\partial': '∂',
-        r'\\nabla': '∇',
-        r'\\Delta': 'Δ',
-        r'\\delta': 'δ',
-        r'\\alpha': 'α',
-        r'\\beta': 'β',
-        r'\\gamma': 'γ',
-        r'\\theta': 'θ',
-        r'\\lambda': 'λ',
-        r'\\mu': 'μ',
-        r'\\pi': 'π',
-        r'\\sigma': 'σ',
-        r'\\tau': 'τ',
-        r'\\phi': 'φ',
-        r'\\chi': 'χ',
-        r'\\psi': 'ψ',
-        r'\\omega': 'ω',
-        r'\\sqrt': '√',
-        r'\\frac': '',  # Will be handled separately
-        r'\\text\{([^}]+)\}': r'\1',  # Remove \text{} wrapper
-        r'\\_': '_',  # Underscore
-        r'\\\\': '\n',  # Line break
-    }
-    
-    # Apply basic substitutions
-    result = text
-    for latex, unicode_char in latex_to_unicode.items():
-        if latex == r'\\text\{([^}]+)\}':
-            result = re.sub(latex, unicode_char, result)
-        else:
-            result = result.replace(latex, unicode_char)
-    
-    return result
-
-def format_mathematical_expression(text: str) -> str:
-    """Format mathematical expressions for better readability."""
-    # Remove LaTeX delimiters and convert to readable format
-    
-    # Handle inline math expressions $...$
-    text = re.sub(r'\$([^$]+)\$', r'\1', text)
-    
-    # Handle display math expressions $$...$$
-    text = re.sub(r'\$\$([^$]+)\$\$', r'\1', text)
-    
-    # Handle LaTeX brackets \[ ... \] and \( ... \)
-    text = re.sub(r'\\\[([^\]]+)\\\]', r'\1', text)
-    text = re.sub(r'\\\(([^)]+)\\\)', r'\1', text)
-    
-    # Handle curly braces in subscripts and superscripts
-    text = re.sub(r'_\{([^}]+)\}', r'_\1', text)
-    text = re.sub(r'\^\{([^}]+)\}', r'^\1', text)
-    
-    # Handle \text{} wrapper
-    text = re.sub(r'\\text\{([^}]+)\}', r'\1', text)
-    
-    # Handle fractions \frac{numerator}{denominator}
-    def replace_frac(match):
-        num = match.group(1)
-        den = match.group(2)
-        return f"({num})/({den})"
-    
-    text = re.sub(r'\\frac\{([^}]+)\}\{([^}]+)\}', replace_frac, text)
-    
-    # Convert LaTeX symbols to Unicode
-    text = convert_latex_to_unicode(text)
-    
-    # Clean up extra spaces and formatting
-    text = re.sub(r'\s+', ' ', text)
-    text = text.strip()
-    
-    return text
-
-def render_mathematical_content(content: str) -> str:
-    """Process content to render mathematical expressions properly."""
-    # Split content into parts, identifying mathematical expressions
-    lines = content.split('\n')
-    processed_lines = []
-    
-    for line in lines:
-        # Check if line contains mathematical expressions
-        if any(marker in line for marker in ['$', '\\(', '\\[', '\\text{', '\\frac', '_', '^']):
-            # This line likely contains math - format it
-            formatted_line = format_mathematical_expression(line)
-            processed_lines.append(formatted_line)
-        else:
-            # Regular text line
-            processed_lines.append(line)
-    
-    return '\n'.join(processed_lines)
 
 def check_environment():
     """Check if all required environment variables are set."""
@@ -250,22 +140,24 @@ st.markdown("""
 Get answers to all your Finance related queries.
 """)
 
+
+
 # Floating "New Conversation" Button at bottom-right
-# st.markdown("""
-#     <style>
-#     .new-convo-button {
-#         position: fixed;
-#         bottom: 20px;
-#         right: 30px;
-#         z-index: 9999;
-#     }
-#     </style>
-#     <div class="new-convo-button">
-#         <form action="" method="post">
-#             <button type="submit">🔄 New Conversation</button>
-#         </form>
-#     </div>
-# """, unsafe_allow_html=True)
+st.markdown("""
+    <style>
+    .new-convo-button {
+        position: fixed;
+        bottom: 20px;
+        right: 30px;
+        z-index: 9999;
+    }
+    </style>
+    <div class="new-convo-button">
+        <form action="" method="post">
+            <button type="submit">🔄 New Conversation</button>
+        </form>
+    </div>
+""", unsafe_allow_html=True)
 
 # Clear session state on button click (handle post request)
 if st.session_state.get("reset_chat", False):
@@ -287,13 +179,10 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
-
 # Chat interface
 for message in st.session_state.chat_history:
     with st.chat_message(message["role"]):
-        # Process mathematical content in chat history
-        processed_content = render_mathematical_content(message["content"])
-        st.write(processed_content)
+        st.write(message["content"])
 
 # Display sources if enabled
 if st.session_state.show_sources and st.session_state.current_sources:
@@ -304,6 +193,7 @@ if st.session_state.show_sources and st.session_state.current_sources:
             if "metadata" in source and "url" in source["metadata"]:
                 st.markdown(f"[Link to source]({source['metadata']['url']})")
             st.divider()
+
 
 # User input
 user_input = st.chat_input("Ask me anything about Finance...")
@@ -344,20 +234,17 @@ if user_input:
                 streaming_container=response_placeholder
             )
             
-            # Process mathematical content in the response
-            processed_response = render_mathematical_content(response)
-            
-            # Display the processed response
-            response_placeholder.markdown(processed_response)
+            # Display the response
+            response_placeholder.markdown(response)
             
             # Display sources separately
             if st.session_state.show_sources:
                 display_sources(relevant_docs)
 
-            # Update chat history with processed response
+            # Update chat history
             st.session_state.chat_history.append({
                 "role": "assistant",
-                "content": processed_response
+                "content": response
             })
             
         except Exception as e:

@@ -41,15 +41,7 @@ class LLMManager:
             6. Include relevant details such as policies, procedures, requirements, or exceptions when applicable.
             7. Do not mention or reference that you're using "context" or "sources" in your response.
             8. If you don't have enough information to answer accurately, clearly state this rather than guessing.
-            
-            MATHEMATICAL FORMULA FORMATTING:
-            9. When presenting mathematical formulas, use clear, readable notation:
-               - Use standard mathematical symbols (×, ÷, ≤, ≥, ≠, etc.)
-               - Write subscripts and superscripts clearly (use underscore _ for subscripts)
-               - For fractions, use the format (numerator)/(denominator)
-               - Avoid LaTeX formatting like \\text{{}}, \\frac{{}}, etc.
-               - Example: Instead of "\\text{{WACC}} = (w_d \\times r_d \\times (1 - T)) + (w_p \\times r_p) + (w_s \\times r_s)"
-                 Write: "WACC = (w_d × r_d × (1 - T)) + (w_p × r_p) + (w_s × r_s)"
+            9. Add "$$" and "$$" around any latex generated content
             
             Current context information:
             {{context}}
@@ -84,16 +76,17 @@ class LLMManager:
         Given the user's question and the available context information, determine:
         1. If the question is clear and specific enough to answer accurately with the available context
         2. If not, what specific clarifying questions would help provide a better answer
-
+        3. Add "$$" and "$$" around any latex generated content
+ 
         Context information:
         {context}
-
+ 
         User question:
         {question}
-
+ 
         Previous conversation:
         {chat_history}
-
+ 
         Respond in JSON format with two fields:
         - "needs_clarification": Boolean (true/false)
         - "clarifying_questions": Array of strings (1-3 specific questions to ask the user if needed)
@@ -185,57 +178,6 @@ class LLMManager:
             return "\n\n**References:**\n" + "\n".join(source_lines)
         return ""
     
-    def post_process_mathematical_content(self, text: str) -> str:
-        """Post-process the LLM response to ensure mathematical content is readable."""
-        
-        # Dictionary of LaTeX expressions to replace
-        latex_replacements = {
-            r'\\text\{([^}]+)\}': r'\1',  # Remove \text{} wrapper
-            r'\\times': '×',
-            r'\\div': '÷',
-            r'\\cdot': '·',
-            r'\\frac\{([^}]+)\}\{([^}]+)\}': r'(\1)/(\2)',  # Convert fractions
-            r'\\leq': '≤',
-            r'\\geq': '≥',
-            r'\\neq': '≠',
-            r'\\approx': '≈',
-            r'\\sum': '∑',
-            r'\\pi': 'π',
-            r'\\alpha': 'α',
-            r'\\beta': 'β',
-            r'\\gamma': 'γ',
-            r'\\delta': 'δ',
-            r'\\sigma': 'σ',
-            r'\\mu': 'μ',
-            r'\\lambda': 'λ',
-            r'\\theta': 'θ',
-            r'\\phi': 'φ',
-            r'\\omega': 'ω',
-            r'\\sqrt': '√',
-            r'\\_': '_',  # Handle escaped underscores
-        }
-        
-        # Apply replacements
-        result = text
-        for pattern, replacement in latex_replacements.items():
-            if pattern == r'\\text\{([^}]+)\}':
-                result = re.sub(pattern, replacement, result)
-            elif pattern == r'\\frac\{([^}]+)\}\{([^}]+)\}':
-                result = re.sub(pattern, replacement, result)
-            else:
-                result = result.replace(pattern.replace('\\', ''), replacement)
-        
-        # Clean up subscripts and superscripts formatting
-        result = re.sub(r'_\{([^}]+)\}', r'_\1', result)
-        result = re.sub(r'\^\{([^}]+)\}', r'^\1', result)
-        
-        # Remove remaining LaTeX delimiters
-        result = re.sub(r'\$\$?([^$]+)\$\$?', r'\1', result)
-        result = re.sub(r'\\\[([^\]]+)\\\]', r'\1', result)
-        result = re.sub(r'\\\(([^)]+)\\\)', r'\1', result)
-        
-        return result
-    
     def generate_response(
         self,
         question: str,
@@ -298,9 +240,6 @@ class LLMManager:
                 "chat_history": formatted_history,
                 "question": question
             })
-        
-        # Post-process mathematical content
-        response = self.post_process_mathematical_content(response)
         
         # Add formatted source references
         if not response.strip().endswith(("?", "...")):
