@@ -13,13 +13,23 @@ from utils.config import config
 from core.embeddings import EmbeddingManager
 from core.vector_store import VectorStore
 from core.llm import LLMManager
-
+from fastapi.middleware.cors import CORSMiddleware
 # Initialize FastAPI app
 app = FastAPI(
     title="RAG Chatbot API",
     description="A REST API for AI-Tutor RAG Chatbot",
     version="1.0.0"
 )
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allows all origins
+    allow_credentials=True,
+    allow_methods=["*"],  # Allows all methods
+    allow_headers=["*"],  # Allows all headers
+)
+
 
 # Pydantic models for request/response
 class ChatMessage(BaseModel):
