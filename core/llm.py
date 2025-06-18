@@ -1,4 +1,4 @@
-# # core/llm.py
+# core/llm.py
 
 from typing import List, Dict, Optional, Tuple, Any
 from langchain_openai import ChatOpenAI
@@ -30,7 +30,7 @@ class LLMManager:
             streaming=True
         )
 
-        self.system_prompt = """You are an AI assistant designed to provide clear, detailed, and accurate answers to user queries based on the provided context.
+        self.system_prompt = """" You are an AI assistant designed to provide clear, detailed, and accurate answers to user queries based on the provided context.
  
             IMPORTANT GUIDELINES:
             1. Provide comprehensive, detailed responses that fully answer the user's question.
@@ -44,10 +44,10 @@ class LLMManager:
             9. Add "$$" and "$$" around any latex generated content
             
             Current context information:
-            {{context}}
+            {context}
             
             Previous conversation history:
-            {{chat_history}}
+            {chat_history}
             
             Please provide a helpful and accurate response based on the above information.
             
@@ -55,7 +55,7 @@ class LLMManager:
             Step 1 : Instructions of Step 1
             Step 2: Instructions of Step 2
         """
-
+        
         self.human_prompt = "{question}"
         
         self.prompt = ChatPromptTemplate.from_messages([
@@ -77,16 +77,16 @@ class LLMManager:
         1. If the question is clear and specific enough to answer accurately with the available context
         2. If not, what specific clarifying questions would help provide a better answer
         3. Add "$$" and "$$" around any latex generated content
- 
+
         Context information:
         {context}
- 
+
         User question:
         {question}
- 
+
         Previous conversation:
         {chat_history}
- 
+
         Respond in JSON format with two fields:
         - "needs_clarification": Boolean (true/false)
         - "clarifying_questions": Array of strings (1-3 specific questions to ask the user if needed)
@@ -185,11 +185,14 @@ class LLMManager:
         chat_history: Optional[List[Dict]] = None,
         streaming_container = None
     ) -> str:
-        """Generate a comprehensive response with proper source attribution and mathematical formatting."""
+        """Generate a comprehensive response with proper source attribution."""
         # Check for clarification needs
         needs_clarification, clarifying_questions = self.needs_clarification(
             question, context, chat_history
         )
+        
+        # if needs_clarification and clarifying_questions:
+        #     return self._format_clarification_question(clarifying_questions)
         
         # Generate the main response
         formatted_context = "\n\n".join([
