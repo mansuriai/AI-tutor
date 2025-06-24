@@ -41,6 +41,9 @@ streamlit-extras
 pymysql==1.1.0
 sqlalchemy
 langchain-openai
+fastapi
+
+
 # # Vector DBs and retrieval
 # pinecone
 # chromadb>=0.4.0
