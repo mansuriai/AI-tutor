@@ -45,6 +45,7 @@ class Config:
     PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
     PINECONE_ENVIRONMENT = os.getenv("PINECONE_ENVIRONMENT", "gcp-starter")
     PINECONE_INDEX_NAME = "ai-tutor" #os.getenv("PINECONE_INDEX_NAME", "indigo-assistant")
+    CUSTOM_LLM_URL = os.getenv("CUSTOM_LLM_URL")
     
     # App settings
     APP_TITLE = "AI Tutor"
