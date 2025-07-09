@@ -34,7 +34,7 @@ class CustomLLMManager:
             Step 2: Instructions of Step 2
         """
 
-    def _format_input(self, question: str, context: List[Dict], chat_history: Optional[List[Dict]] = None) -> str:
+    def _format_input(self, question: str, context: List[Dict], chat_history: Optional[List[Dict]] = None, language: str = "English") -> str:
         """Formats the input for the LLM by combining the prompt, context, and history."""
         formatted_context = "\n\n".join([doc.get('text', '') for doc in context])
         
@@ -44,11 +44,11 @@ class CustomLLMManager:
             formatted_history = "No previous conversation."
 
         prompt = self.system_prompt.format(context=formatted_context, chat_history=formatted_history)
-        return f"{prompt}\n\nHuman: {question}\nAssistant:"
+        return f"{prompt}\n\nHuman: {question}\nAssistant (answer in {language}):"
 
-    def stream_response(self, question: str, context: List[Dict], chat_history: Optional[List[Dict]] = None):
+    def stream_response(self, question: str, context: List[Dict], chat_history: Optional[List[Dict]] = None, language: str = "English"):
         """Yields tokens as they are generated for a streaming response."""
-        formatted_question = self._format_input(question, context, chat_history)
+        formatted_question = self._format_input(question, context, chat_history, language)
         
         payload = {
             "question": formatted_question,
@@ -69,9 +69,9 @@ class CustomLLMManager:
             print(f"Error streaming from custom LLM: {e}")
             yield "Error: Could not get a response from the language model."
 
-    def generate_response(self, question: str, context: List[Dict], chat_history: Optional[List[Dict]] = None) -> str:
+    def generate_response(self, question: str, context: List[Dict], chat_history: Optional[List[Dict]] = None, language: str = "English") -> str:
         """Generates a complete response by consuming the stream."""
-        stream = self.stream_response(question, context, chat_history)
+        stream = self.stream_response(question, context, chat_history, language)
         return "".join(stream)
 
     def needs_clarification(self, question: str, context: List[Dict], chat_history: Optional[List[Dict]] = None):

@@ -43,6 +43,7 @@ class ChatRequest(BaseModel):
     context_window: Optional[int] = 5
     max_history: Optional[int] = 10
     include_sources: Optional[bool] = False
+    language: Optional[str] = "English"
 
 class SourceDocument(BaseModel):
     text: str
@@ -158,7 +159,8 @@ async def chat(request: ChatRequest, stream: bool = True):
                 for token in llm_manager.stream_response(
                     request.message,
                     relevant_docs,
-                    chat_history
+                    chat_history,
+                    request.language
                 ):
                     yield token
             return StreamingResponse(chat_stream(), media_type="text/plain")
@@ -166,7 +168,8 @@ async def chat(request: ChatRequest, stream: bool = True):
         response = llm_manager.generate_response(
             request.message,
             relevant_docs,
-            chat_history
+            chat_history,
+            request.language
         )
         # Prepare sources if requested
         sources = []
