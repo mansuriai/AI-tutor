@@ -8,7 +8,8 @@ from utils.config import config
 class CustomLLMManager:
     def __init__(self):
         self.llm_url = config.CUSTOM_LLM_URL
-        self.system_prompt = """You are an AI assistant designed to provide clear, detailed, and accurate answers to user queries based on the provided context.
+        self.model = config.CUSTOM_LLM_MODEL
+        self.system_prompt_template = """You are an AI assistant designed to provide clear, detailed, and accurate answers to user queries based on the provided context.
  
             IMPORTANT GUIDELINES:
             1. Provide comprehensive, detailed responses that fully answer the user's question.
@@ -24,9 +25,6 @@ class CustomLLMManager:
             Current context information:
             {context}
             
-            Previous conversation history:
-            {chat_history}
-            
             Please provide a helpful and accurate response based on the above information.
             
             Provide answers in detailed steps like if its a process question or a 'How to' types question eg "How to add a new location"
@@ -34,37 +32,58 @@ class CustomLLMManager:
             Step 2: Instructions of Step 2
         """
 
-    def _format_input(self, question: str, context: List[Dict], chat_history: Optional[List[Dict]] = None, language: str = "English") -> str:
-        """Formats the input for the LLM by combining the prompt, context, and history."""
+    def _prepare_messages(self, question: str, context: List[Dict], chat_history: Optional[List[Dict]] = None, language: str = "English") -> List[Dict]:
+        """Constructs the list of messages for the chat completions API."""
         formatted_context = "\n\n".join([doc.get('text', '') for doc in context])
+        system_content = self.system_prompt_template.format(context=formatted_context)
         
+        messages = [{"role": "system", "content": system_content}]
+        
+        # Add past conversation history
         if chat_history:
-            formatted_history = "\n".join([f"{msg['role']}: {msg['content']}" for msg in chat_history])
-        else:
-            formatted_history = "No previous conversation."
-
-        prompt = self.system_prompt.format(context=formatted_context, chat_history=formatted_history)
-        return f"{prompt}\n\nHuman: {question}\nAssistant (answer in {language}):"
+            messages.extend(chat_history)
+            
+        # Add the current user question
+        user_message_content = f"{question}\n\nALWAYS (answer in {language})"
+        messages.append({"role": "user", "content": user_message_content})
+        
+        return messages
 
     def stream_response(self, question: str, context: List[Dict], chat_history: Optional[List[Dict]] = None, language: str = "English"):
         """Yields tokens as they are generated for a streaming response."""
-        formatted_question = self._format_input(question, context, chat_history, language)
+        messages = self._prepare_messages(question, context, chat_history, language)
         
         payload = {
-            "question": formatted_question,
-            "max_tokens": 2048  # You can adjust this as needed
+            "model": self.model,
+            "messages": messages,
+            "max_tokens": 2048,
+            "stream": True
         }
         
         headers = {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Accept': 'text/event-stream'
         }
 
         try:
             with requests.post(self.llm_url, headers=headers, json=payload, stream=True) as response:
-                response.raise_for_status()  # Raise an exception for bad status codes
-                for chunk in response.iter_content(chunk_size=None, decode_unicode=True):
-                    if chunk:
-                        yield chunk
+                response.raise_for_status()
+                for line in response.iter_lines():
+                    if line:
+                        decoded_line = line.decode('utf-8')
+                        if decoded_line.startswith('data: '):
+                            json_str = decoded_line[len('data: '):]
+                            if json_str.strip() == '[DONE]':
+                                break
+                            try:
+                                data = json.loads(json_str)
+                                if data['choices'] and 'content' in data['choices'][0]['delta']:
+                                    token = data['choices'][0]['delta']['content']
+                                    if token:
+                                        yield token
+                            except json.JSONDecodeError:
+                                print(f"Could not decode JSON: {json_str}")
+                                continue
         except requests.exceptions.RequestException as e:
             print(f"Error streaming from custom LLM: {e}")
             yield "Error: Could not get a response from the language model."
