@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Tutor Streaming Test</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 800px;
+            width: 100%;
+            padding: 30px;
+        }
+        
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        .config-section {
+            background: #f7f9fc;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .config-section label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        .config-section input,
+        .config-section select {
+            width: 100%;
+            padding: 10px 15px;
+            border: 2px solid #e1e8ed;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        
+        .config-section input:focus,
+        .config-section select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .input-section {
+            margin-bottom: 20px;
+        }
+        
+        textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e1e8ed;
+            border-radius: 12px;
+            font-size: 16px;
+            resize: vertical;
+            min-height: 100px;
+            font-family: inherit;
+            transition: border-color 0.3s;
+        }
+        
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        button {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .send-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .send-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .send-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .clear-btn {
+            background: #f0f0f0;
+            color: #333;
+        }
+        
+        .clear-btn:hover {
+            background: #e0e0e0;
+        }
+        
+        .response-section {
+            background: #f7f9fc;
+            border-radius: 12px;
+            padding: 20px;
+            min-height: 200px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .response-section h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+        
+        .response-content {
+            color: #333;
+            line-height: 1.8;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        
+        .streaming-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: #667eea;
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+            margin-left: 5px;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+        
+        .error {
+            color: #e74c3c;
+            background: #fee;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+        
+        .success {
+            color: #27ae60;
+            background: #efe;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+        
+        .stats {
+            display: flex;
+            gap: 20px;
+            margin-top: 15px;
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .stat-item {
+            background: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 AI Tutor Streaming Test</h1>
+        <p class="subtitle">Test the streaming API endpoint in real-time</p>
+        
+        <div class="config-section">
+            <label for="apiUrl">API Endpoint URL:</label>
+            <input type="text" id="apiUrl" value="http://localhost:8000/chat?stream=true" placeholder="http://localhost:8000/chat?stream=true">
+            
+            <label for="language" style="margin-top: 15px;">Language:</label>
+            <select id="language">
+                <option value="English">English</option>
+                <option value="Bahasa">Bahasa Indonesia</option>
+                <option value="Javanese">Javanese</option>
+                <option value="Sundanese">Sundanese</option>
+                <option value="Madurese">Madurese</option>
+                <option value="Minangkabau">Minangkabau</option>
+                <option value="Balinese">Balinese</option>
+            </select>
+        </div>
+        
+        <div class="input-section">
+            <textarea id="messageInput" placeholder="Type your question here... (e.g., 'Explain photosynthesis' or 'What is a derivative?')">Explain the concept of photosynthesis</textarea>
+        </div>
+        
+        <div class="button-group">
+            <button class="send-btn" id="sendBtn" onclick="sendMessage()">
+                Send Message
+            </button>
+            <button class="clear-btn" onclick="clearResponse()">
+                Clear Response
+            </button>
+        </div>
+        
+        <div class="response-section">
+            <h3 id="responseTitle">Response:</h3>
+            <div class="response-content" id="responseContent">
+                <em style="color: #999;">Waiting for response...</em>
+            </div>
+            <div class="stats" id="stats" style="display: none;">
+                <div class="stat-item">
+                    <strong>Tokens:</strong> <span id="tokenCount">0</span>
+                </div>
+                <div class="stat-item">
+                    <strong>Duration:</strong> <span id="duration">0s</span>
+                </div>
+                <div class="stat-item">
+                    <strong>Status:</strong> <span id="status">Idle</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let tokenCount = 0;
+        let startTime = 0;
+        let durationInterval = null;
+
+        async function sendMessage() {
+            const apiUrl = document.getElementById('apiUrl').value;
+            const message = document.getElementById('messageInput').value.trim();
+            const language = document.getElementById('language').value;
+            const sendBtn = document.getElementById('sendBtn');
+            const responseContent = document.getElementById('responseContent');
+            const responseTitle = document.getElementById('responseTitle');
+            const stats = document.getElementById('stats');
+            const tokenCountEl = document.getElementById('tokenCount');
+            const durationEl = document.getElementById('duration');
+            const statusEl = document.getElementById('status');
+
+            if (!message) {
+                alert('Please enter a message');
+                return;
+            }
+
+            // Reset state
+            tokenCount = 0;
+            startTime = Date.now();
+            responseContent.innerHTML = '';
+            sendBtn.disabled = true;
+            sendBtn.textContent = 'Streaming...';
+            responseTitle.innerHTML = 'Response: <span class="streaming-indicator"></span>';
+            stats.style.display = 'flex';
+            statusEl.textContent = 'Streaming';
+            statusEl.style.color = '#667eea';
+
+            // Update duration counter
+            durationInterval = setInterval(() => {
+                const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+                durationEl.textContent = elapsed + 's';
+            }, 100);
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'text/plain'
+                    },
+                    body: JSON.stringify({
+                        message: message,
+                        chat_history: [],
+                        context_window: 5,
+                        max_history: 10,
+                        include_sources: false,
+                        language: language
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let done = false;
+
+                while (!done) {
+                    const { value, done: doneReading } = await reader.read();
+                    done = doneReading;
+                    
+                    if (value) {
+                        const chunk = decoder.decode(value, { stream: true });
+                        console.log('[Streaming chunk]:', chunk);
+                        
+                        // Update response content
+                        responseContent.textContent += chunk;
+                        
+                        // Update token count (approximate - count chunks as tokens)
+                        tokenCount++;
+                        tokenCountEl.textContent = tokenCount;
+                        
+                        // Auto-scroll to bottom
+                        responseContent.scrollTop = responseContent.scrollHeight;
+                    }
+                }
+
+                // Streaming complete
+                clearInterval(durationInterval);
+                const totalDuration = ((Date.now() - startTime) / 1000).toFixed(2);
+                durationEl.textContent = totalDuration + 's';
+                responseTitle.innerHTML = 'Response: <span style="color: #27ae60;">✓ Complete</span>';
+                statusEl.textContent = 'Complete';
+                statusEl.style.color = '#27ae60';
+                
+                responseContent.innerHTML += '\n\n<div class="success">✓ Streaming completed successfully!</div>';
+
+            } catch (error) {
+                console.error('Error:', error);
+                clearInterval(durationInterval);
+                responseContent.innerHTML = `<div class="error">
+                    <strong>Error:</strong> ${error.message}<br>
+                    <br>
+                    <strong>Troubleshooting:</strong><br>
+                    • Make sure the API server is running<br>
+                    • Check the API URL is correct<br>
+                    • Check browser console for CORS errors<br>
+                    • Verify environment variables are set
+                </div>`;
+                responseTitle.textContent = 'Response:';
+                statusEl.textContent = 'Error';
+                statusEl.style.color = '#e74c3c';
+            } finally {
+                sendBtn.disabled = false;
+                sendBtn.textContent = 'Send Message';
+            }
+        }
+
+        function clearResponse() {
+            document.getElementById('responseContent').innerHTML = '<em style="color: #999;">Waiting for response...</em>';
+            document.getElementById('responseTitle').textContent = 'Response:';
+            document.getElementById('stats').style.display = 'none';
+            tokenCount = 0;
+            if (durationInterval) {
+                clearInterval(durationInterval);
+            }
+        }
+
+        // Allow Enter key to send (Shift+Enter for new line)
+        document.getElementById('messageInput').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+    </script>
+</body>
+</html>

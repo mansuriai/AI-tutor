@@ -315,62 +315,47 @@ class LLMManager:
         language: str = "English"
     ):
         """Yield tokens as they are generated for FastAPI StreamingResponse."""
-        from langchain_core.callbacks.base import BaseCallbackHandler
-        import queue
-        import threading
-
-        class FastAPIStreamHandler(BaseCallbackHandler):
-            def __init__(self):
-                self.queue = queue.Queue()
-                self.done = False
-
-            def on_llm_new_token(self, token: str, **kwargs):
-                self.queue.put(token)
-
-            def on_llm_end(self, *args, **kwargs):
-                self.done = True
-
-        handler = FastAPIStreamHandler()
-        streaming_llm = ChatOpenAI(
-            model=config.LLM_MODEL,
-            temperature=0.7,
-            streaming=True,
-            callbacks=[handler]
-        )
+        from openai import OpenAI
+        
+        # Initialize OpenAI client directly
+        client = OpenAI(api_key=config.OPENAI_API_KEY)
+        
+        # Format context
         formatted_context = "\n\n".join([
             f"CONTEXT {i+1}:\n{doc['text']}\n" 
             for i, doc in enumerate(context)
         ])
-        formatted_history = format_chat_history(chat_history) if chat_history else ""
         
-        # Add language instruction to the question
+        # Build messages
+        messages = [
+            {
+                "role": "system",
+                "content": self.system_prompt.replace("{{context}}", formatted_context).replace("{{chat_history}}", format_chat_history(chat_history) if chat_history else "")
+            }
+        ]
+        
+        # Add chat history
+        if chat_history:
+            messages.extend(chat_history)
+        
+        # Add current question with language instruction
         question_with_language = f"{question}\n\nALWAYS (answer in {language})"
+        messages.append({
+            "role": "user",
+            "content": question_with_language
+        })
         
-        chain = (
-            self.prompt 
-            | streaming_llm 
-            | StrOutputParser()
+        # Direct OpenAI streaming call
+        stream = client.chat.completions.create(
+            model=config.LLM_MODEL,
+            messages=messages,
+            temperature=0.7,
+            stream=True
         )
-        def run_chain():
-            chain.invoke({
-                "context": formatted_context,
-                "chat_history": formatted_history,
-                "question": question_with_language
-            })
-            handler.done = True
-        thread = threading.Thread(target=run_chain)
-        thread.start()
-        buffer = ""
-        while not handler.done or not handler.queue.empty():
-            try:
-                token = handler.queue.get(timeout=0.1)
-                buffer += token
-                print(f"[STREAM CHUNK] {token}")  # Print each streaming chunk
+        
+        # Yield each token as it arrives
+        for chunk in stream:
+            if chunk.choices[0].delta.content is not None:
+                token = chunk.choices[0].delta.content
+                # print(f"[STREAM TOKEN] {token}")  # Debug log
                 yield token
-            except queue.Empty:
-                continue
-        # Optionally, add source references at the end
-        if not buffer.strip().endswith(("?", "...")):
-            source_references = self.format_source_references(context)
-            if source_references:
-                yield f"\n\n{source_references}"

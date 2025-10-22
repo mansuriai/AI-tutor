@@ -1,5 +1,5 @@
 # app/api_main.py
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import List, Dict, Optional
 import os
@@ -129,12 +129,9 @@ async def health_check():
 
 # Main chat endpoint
 @app.post("/chat")
-async def chat(request: ChatRequest, stream: bool = Query(True, description="Enable streaming response")):
+async def chat(request: ChatRequest, stream: bool = True):
     """Main chat endpoint for processing user queries."""
     global embedding_manager, vector_store, llm_manager
-    
-    # Log streaming status for debugging
-    print(f"[CHAT ENDPOINT] Stream parameter: {stream}")
     # Check if components are initialized
     if embedding_manager is None or vector_store is None or llm_manager is None:
         raise HTTPException(status_code=503, detail="Service components not initialized")
