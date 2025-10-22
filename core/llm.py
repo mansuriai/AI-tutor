@@ -5,7 +5,7 @@ from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate, SystemMessagePromptTemplate, HumanMessagePromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough
-from langchain.callbacks.base import BaseCallbackHandler
+from langchain_core.callbacks.base import BaseCallbackHandler
 from utils.config import config
 from utils.helpers import format_chat_history
 import json
@@ -234,6 +234,7 @@ class LLMManager:
         question: str,
         context: List[Dict],
         chat_history: Optional[List[Dict]] = None,
+        language: str = "English",
         streaming_container = None
     ) -> str:
         """Generate a comprehensive response with proper source attribution and mathematical formatting."""
@@ -249,6 +250,9 @@ class LLMManager:
         ])
         
         formatted_history = format_chat_history(chat_history) if chat_history else ""
+        
+        # Add language instruction to the question
+        question_with_language = f"{question}\n\nALWAYS (answer in {language})"
         
         # If streaming is requested, use a streaming handler
         if streaming_container:
@@ -273,7 +277,7 @@ class LLMManager:
             response = streaming_chain.invoke({
                 "context": formatted_context,
                 "chat_history": formatted_history,
-                "question": question
+                "question": question_with_language
             })
             
             # Use the accumulated text from the stream handler
@@ -289,7 +293,7 @@ class LLMManager:
             response = chain.invoke({
                 "context": formatted_context,
                 "chat_history": formatted_history,
-                "question": question
+                "question": question_with_language
             })
         
         # Post-process mathematical content
@@ -307,10 +311,11 @@ class LLMManager:
         self,
         question: str,
         context: List[Dict],
-        chat_history: Optional[List[Dict]] = None
+        chat_history: Optional[List[Dict]] = None,
+        language: str = "English"
     ):
         """Yield tokens as they are generated for FastAPI StreamingResponse."""
-        from langchain.callbacks.base import BaseCallbackHandler
+        from langchain_core.callbacks.base import BaseCallbackHandler
         import queue
         import threading
 
@@ -337,6 +342,10 @@ class LLMManager:
             for i, doc in enumerate(context)
         ])
         formatted_history = format_chat_history(chat_history) if chat_history else ""
+        
+        # Add language instruction to the question
+        question_with_language = f"{question}\n\nALWAYS (answer in {language})"
+        
         chain = (
             self.prompt 
             | streaming_llm 
@@ -346,7 +355,7 @@ class LLMManager:
             chain.invoke({
                 "context": formatted_context,
                 "chat_history": formatted_history,
-                "question": question
+                "question": question_with_language
             })
             handler.done = True
         thread = threading.Thread(target=run_chain)
